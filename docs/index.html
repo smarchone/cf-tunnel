@@ -19,85 +19,88 @@
       --fg:#c4c7cf; --dim:#7d828e; --faint:#565b66; --white:#e8e9ed; --accent:#aab4ff; --accent-soft:rgba(170,180,255,.10); --accent-line:rgba(170,180,255,.35);
       --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       --sans:ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+      /* Space between sections: roomy on tall screens, tight enough on short ones that the footer stays in view. */
+      --gap:clamp(16px, calc((100svh - 690px) / 6.5), 56px);   /* 6.5 gaps in total; ~690px of content */
       color-scheme:dark;
     }
     * { box-sizing:border-box; }
     html, body { background:var(--bg); color:var(--fg); margin:0; }
-    body { font:15px/1.65 var(--sans); padding:56px 16px 48px; -webkit-font-smoothing:antialiased;
+    body { font:15px/1.65 var(--sans); padding:calc(var(--gap) * .8) 16px calc(var(--gap) * .5); -webkit-font-smoothing:antialiased;
            background:radial-gradient(900px 420px at 50% -120px, var(--accent-soft), transparent 70%) no-repeat, var(--bg); }
-    main { max-width:860px; margin:0 auto; }
+    main { max-width:800px; margin:0 auto; }
     a { color:var(--accent); }
 
-    h1 { font:600 13px/1 var(--mono); color:var(--dim); margin:0 0 22px; letter-spacing:-.01em; }
+    h1 { font:600 13px/1 var(--mono); color:var(--dim); margin:0 0 calc(var(--gap) * .6); letter-spacing:-.01em; }
     h1 span { color:var(--accent); }
-    .hero { margin:0 0 14px; font:700 clamp(34px, 7vw, 56px)/1.05 var(--sans); color:var(--white); letter-spacing:-.035em; }
+    h1 a { color:inherit; text-decoration:none; }
+    h1 a:hover span { text-decoration:underline; text-underline-offset:3px; }
+    .top { display:flex; align-items:flex-start; gap:40px; }
+    .top .hero { flex:0 1 auto; min-width:0; }   /* icon sits just past the slogan, not at the far edge */
+    .repo { flex:none; margin-top:6px; color:var(--dim); transition:color .15s; }
+    .repo:hover { color:var(--white); }
+    .repo svg { display:block; width:30px; height:30px; fill:currentColor; }
+    .hero { margin:0 0 14px; font:700 clamp(32px, 6vw, 48px)/1.05 var(--sans); color:var(--white); letter-spacing:-.035em; }
     .hero em { font-style:normal; color:var(--accent);
                background:linear-gradient(100deg, #cfd6ff, #aab4ff 55%, #7e8ce0); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-    .tldr { color:var(--fg); margin:0 0 26px; max-width:640px; }
+    .tldr { color:var(--fg); margin:0 0 var(--gap); max-width:640px; }
     .tldr span { font:11px/1 var(--mono); color:var(--accent); text-transform:uppercase; letter-spacing:.1em; margin-right:8px; }
     code { font:13px var(--mono); color:var(--accent); background:var(--accent-soft); padding:2px 6px; border-radius:5px; }
 
     .lbl { font:11px/1 var(--mono); color:var(--accent); text-transform:uppercase; letter-spacing:.1em; }
-    .problem { margin:8px 0 24px; padding:16px 20px; border-left:2px solid var(--accent); background:linear-gradient(90deg, var(--accent-soft), transparent 80%); border-radius:0 12px 12px 0; }
-    .problem ul { list-style:none; padding:0; margin:12px 0 0; }
-    .problem li { margin:6px 0; padding-left:20px; position:relative; }
+    .problem { margin:0 0 var(--gap); }
+    .problem ul { list-style:none; padding:0; margin:8px 0 0; }
+    .problem li { margin:0; padding-left:20px; position:relative; line-height:1.7; }
     .problem li::before { content:"×"; position:absolute; left:0; color:var(--faint); }
 
-    .pitch { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin:12px 0 18px; }
-    .pitch div { min-width:0; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 18px 20px; transition:border-color .2s; }
-    .pitch div:hover { border-color:#323642; }
-    .pitch h2 { font:600 16px/1.35 var(--sans); color:var(--white); margin:10px 0 6px; }
+    .pitch { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:40px; margin:0 0 calc(var(--gap) * .7); }
+    .pitch div { min-width:0; }
+    .pitch h2 { font:600 16px/1.35 var(--sans); color:var(--white); margin:8px 0 4px; }
     .pitch p { color:var(--dim); font-size:14px; line-height:1.6; margin:0; }
 
-    .flow { display:flex; flex-wrap:wrap; align-items:center; gap:8px 6px; margin:0 0 52px; font:13px/1 var(--mono); color:var(--faint); }
+    .flow { display:flex; flex-wrap:wrap; align-items:center; gap:8px 6px; margin:0 0 var(--gap); font:13px/1 var(--mono); color:var(--faint); }
     .flow span { color:var(--dim); border:1px solid var(--line); border-radius:999px; padding:8px 12px; }
     .flow span.gold { color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft); }
     .flow span.end { color:var(--white); }
 
-    .eyebrow { font:600 12px/1 var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.12em; margin:0 0 14px; }
+    .eyebrow { font:600 12px/1 var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.12em; margin:0 0 12px; display:flex; align-items:baseline; gap:.5em; }
     .eyebrow b { color:var(--accent); font-weight:600; }
+    .eyebrow .req { color:var(--faint); font-weight:400; text-transform:none; letter-spacing:0; }
+    .eyebrow button { margin-left:auto; font:12px var(--mono); color:var(--dim); background:none; border:0; padding:0; cursor:pointer; text-transform:none; letter-spacing:0; }
+    .eyebrow button:hover { color:var(--accent); }
 
     .win { background:var(--win); border:1px solid var(--line); border-radius:14px; overflow:hidden;
            box-shadow:0 30px 80px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.02) inset; }
-    .bar { display:flex; align-items:center; gap:12px; height:40px; padding:0 14px; background:var(--bar); border-bottom:1px solid var(--line); }
-    .dots { display:flex; gap:7px; }
-    .dots i { width:11px; height:11px; border-radius:50%; background:var(--line); }
-    .title { flex:1; text-align:center; font:12px var(--mono); color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .bar button { font:12px var(--mono); color:var(--dim); background:none; border:0; padding:5px 8px; border-radius:6px; cursor:pointer; }
-    .bar button:hover { color:var(--fg); background:var(--line); }
-    .screen { margin:0; padding:18px 20px 22px; font:12.5px/1.75 var(--mono); color:var(--white); overflow-x:auto; white-space:pre; }
-    .screen, .after pre { scrollbar-width:thin; scrollbar-color:var(--line) transparent; }
+    .screen { margin:0; padding:16px 20px 18px; font:12.5px/1.65 var(--mono); color:var(--white); overflow-x:auto; white-space:pre; }
+    .screen { scrollbar-width:thin; scrollbar-color:var(--line) transparent; }
     .screen .c { color:var(--faint); }
     .screen .p { color:var(--dim); user-select:none; }
     .screen .o { color:var(--accent); }
 
-    .after { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin:14px 0 0; }
-    .after > div { min-width:0; border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
-    .after h3 { font:600 14px/1.35 var(--sans); color:var(--white); margin:10px 0 8px; }
-    .after pre { margin:0; background:var(--code); border-radius:8px; padding:10px 12px; font:12px/1.6 var(--mono); color:var(--fg); overflow-x:auto; }
-    .after pre .c { color:var(--faint); }
-    .after p { color:var(--dim); font-size:13.5px; margin:8px 0 0; }
-    .after ul { list-style:none; padding:0; margin:0; font:12.5px/1.9 var(--mono); color:var(--dim); }
-    .after li b { color:var(--white); font-weight:500; }
 
-    .hint { color:var(--faint); font:12px var(--mono); margin-top:36px; text-align:center; }
+    .hint { color:var(--faint); font:12px var(--mono); margin:calc(var(--gap) * .7) 0 0; text-align:center; }
     .hint a { color:var(--dim); text-decoration:none; }
     .hint a:hover { color:var(--accent); }
+    .hint .heart { color:#ff5c7a; }
+    .hint .gh { display:inline-flex; align-items:center; gap:6px; vertical-align:middle; }
+    .hint .gh svg { width:14px; height:14px; fill:currentColor; }
 
     @media (max-width:600px) {
       body { padding-top:28px; }
-      .pitch, .after { grid-template-columns:minmax(0, 1fr); }
+      .pitch { grid-template-columns:minmax(0, 1fr); gap:20px; }
       .screen { font-size:11.5px; padding:16px 14px 20px; }
       .screen .c { display:none; }   /* commands fit; comments are desktop-only */
-      .title { display:none; }
+      .eyebrow .req { display:none; }
     }
   </style>
 </head>
 <body>
 <main>
-  <h1>~/ <span>smarchone/cf-tunnel</span></h1>
+  <h1><a href="https://github.com/smarchone/cf-tunnel">~/ <span>smarchone/cf-tunnel</span></a></h1>
 
-  <p class="hero">Demo your local services.<br><em>One link. Free.</em></p>
+  <div class="top">
+    <p class="hero">Demo localhost<br><em>from one link that never changes.</em></p>
+    <a class="repo" href="https://github.com/smarchone/cf-tunnel" aria-label="cf-tunnel on GitHub" title="cf-tunnel on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
+  </div>
   <p class="tldr"><span>tl;dr</span>Send friends <code>demo.you.workers.dev</code> once. While your laptop runs <code>online.sh</code>, they log in and see your localhost. When you stop it, they see AFK.</p>
 
   <div class="problem">
@@ -109,52 +112,29 @@
     </ul>
   </div>
 
-  <span class="lbl">The fix</span>
   <section class="pitch">
-    <div><span class="lbl">Permanent link</span><h2>The URL never changes.</h2><p>A Cloudflare Worker is the front door and follows each new tunnel for you. No domain, no card.</p></div>
-    <div><span class="lbl">Friends only</span><h2>A password per person.</h2><p>Login happens at the Worker. The raw tunnel URL is useless without a secret only the Worker has.</p></div>
-    <div><span class="lbl">Online = running</span><h2>Ctrl-C and you're AFK.</h2><p>One script starts everything and tears it down. Visitors get a clean AFK page, not an error.</p></div>
+    <div><span class="lbl">Permanent link</span><h2>The URL never changes.</h2><p>A Cloudflare Worker follows each new tunnel. No domain, no card.</p></div>
+    <div><span class="lbl">Friends only</span><h2>A password per person.</h2><p>Login is checked at the Worker. The raw tunnel URL is useless.</p></div>
+    <div><span class="lbl">Online = running</span><h2>Ctrl-C and you're AFK.</h2><p>One script starts and stops it all. Friends see AFK, not errors.</p></div>
   </section>
 
   <div class="flow">
     <span>friend</span>→<span class="gold">demo.you.workers.dev</span>→<span>login</span>→<span>tunnel</span>→<span>nginx</span>→<span class="end">localhost:3000</span>
   </div>
 
-  <p class="eyebrow">Get started · <b>~1 min</b></p>
+  <p class="eyebrow">Get started · <b>~1 min</b> <span class="req">· needs Docker Desktop, Node, a free Cloudflare account</span><button id="copy">copy</button></p>
   <div class="win">
-    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="title">needs Docker Desktop, Node and a free Cloudflare account</div><button id="copy">copy</button></div>
-<pre class="screen" id="steps"><span class="p">$ </span>git clone https://github.com/smarchone/cf-tunnel &amp;&amp; cd cf-tunnel
+<pre class="screen" id="steps"><span class="p">$ </span>git clone https://github.com/smarchone/cf-tunnel
+<span class="p">$ </span>cd cf-tunnel
 <span class="p">$ </span>./scripts/init-env.sh          <span class="c"># secret for the Worker ↔ laptop handshake</span>
 <span class="p">$ </span>./scripts/add-user.sh alice    <span class="c"># one per friend, password ≥ 12 chars</span>
 <span class="p">$ </span>npx wrangler login             <span class="c"># free Cloudflare account</span>
 <span class="p">$ </span>./scripts/deploy-worker.sh     <span class="c"># prints your permanent link</span>
-<span class="o">  → https://demo.you.workers.dev</span>
 <span class="p">$ </span>./scripts/online.sh            <span class="c"># online while it runs · Ctrl-C = AFK</span></pre>
   </div>
 
-  <section class="after">
-    <div>
-      <span class="lbl">Expose a service</span>
-      <h3>One file per service.</h3>
-<pre><span class="c"># nginx/templates/services/app.conf.template</span>
-location /app/ {
-  proxy_pass http://host.docker.internal:3000/;
-}</pre>
-      <p>Then restart <code>online.sh</code>. Paths you don't list return 404.</p>
-    </div>
-    <div>
-      <span class="lbl">What visitors see</span>
-      <h3>Always a clear answer.</h3>
-      <ul>
-        <li><b>laptop offline</b> → AFK</li>
-        <li><b>wrong password</b> → 401</li>
-        <li><b>right password</b> → your app</li>
-        <li><b>raw tunnel URL</b> → 403</li>
-      </ul>
-    </div>
-  </section>
 
-  <p class="hint"><a href="https://github.com/smarchone/cf-tunnel">GitHub ↗</a> · <a href="https://smarchone.github.io/skills/">more from smarchone ↗</a></p>
+  <p class="hint">made with <span class="heart" aria-label="love">♥</span> · <a class="gh" href="https://github.com/smarchone/cf-tunnel"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>@smarchone/cf-tunnel</a></p>
 </main>
 <script>
   const btn = document.getElementById('copy');
