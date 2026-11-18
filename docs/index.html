@@ -17,6 +17,7 @@
     :root {
       --bg:#0c0d10; --win:#131419; --bar:#1a1c22; --line:#23262e; --code:#1a1c22; --card:#131419;
       --fg:#c4c7cf; --dim:#7d828e; --faint:#565b66; --white:#e8e9ed; --accent:#aab4ff; --accent-soft:rgba(170,180,255,.10); --accent-line:rgba(170,180,255,.35);
+      --warn:#e0a85a;
       --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       --sans:ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
       /* Space between sections: roomy on tall screens, tight enough on short ones that the footer stays in view. */
@@ -27,7 +28,7 @@
     html, body { background:var(--bg); color:var(--fg); margin:0; }
     body { font:15px/1.65 var(--sans); padding:calc(var(--gap) * .8) 16px calc(var(--gap) * .5); -webkit-font-smoothing:antialiased;
            background:radial-gradient(900px 420px at 50% -120px, var(--accent-soft), transparent 70%) no-repeat, var(--bg); }
-    main { max-width:800px; margin:0 auto; }
+    main { max-width:640px; margin:0 auto; }
     a { color:var(--accent); }
 
     h1 { font:600 13px/1 var(--mono); color:var(--dim); margin:0 0 calc(var(--gap) * .6); letter-spacing:-.01em; }
@@ -39,7 +40,8 @@
     .repo { flex:none; margin-top:6px; color:var(--dim); transition:color .15s; }
     .repo:hover { color:var(--white); }
     .repo svg { display:block; width:30px; height:30px; fill:currentColor; }
-    .hero { margin:0 0 14px; font:700 clamp(32px, 6vw, 48px)/1.05 var(--sans); color:var(--white); letter-spacing:-.035em; }
+    .hero { margin:0 0 14px; font:700 clamp(28px, 5vw, 40px)/1.05 var(--sans); color:var(--white); letter-spacing:-.035em; }
+    .hero .sub { display:block; margin-top:8px; font:600 clamp(17px, 2.6vw, 20px)/1.3 var(--sans); color:var(--fg); letter-spacing:-.015em; }
     .hero em { font-style:normal; color:var(--accent);
                background:linear-gradient(100deg, #cfd6ff, #aab4ff 55%, #7e8ce0); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
     .tldr { color:var(--fg); margin:0 0 var(--gap); max-width:640px; }
@@ -52,15 +54,18 @@
     .problem li { margin:0; padding-left:20px; position:relative; line-height:1.7; }
     .problem li::before { content:"×"; position:absolute; left:0; color:var(--faint); }
 
-    .pitch { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:40px; margin:0 0 calc(var(--gap) * .7); }
+    .pitch { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:28px; margin:0 0 calc(var(--gap) * .7); }
     .pitch div { min-width:0; }
     .pitch h2 { font:600 16px/1.35 var(--sans); color:var(--white); margin:8px 0 4px; }
     .pitch p { color:var(--dim); font-size:14px; line-height:1.6; margin:0; }
 
-    .flow { display:flex; flex-wrap:wrap; align-items:center; gap:8px 6px; margin:0 0 var(--gap); font:13px/1 var(--mono); color:var(--faint); }
-    .flow span { color:var(--dim); border:1px solid var(--line); border-radius:999px; padding:8px 12px; }
+    .flow { display:flex; flex-wrap:wrap; align-items:center; gap:8px 4px; margin:0 0 var(--gap); font:12px/1 var(--mono); color:var(--faint); }
+    .flow span { color:var(--dim); border:1px solid var(--line); border-radius:999px; padding:7px 10px; }
     .flow span.gold { color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft); }
     .flow span.end { color:var(--white); }
+    .flow i { font-style:normal; }
+
+    .pitch .warn { color:var(--warn); }
 
     .eyebrow { font:600 12px/1 var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.12em; margin:0 0 12px; display:flex; align-items:baseline; gap:.5em; }
     .eyebrow b { color:var(--accent); font-weight:600; }
@@ -89,7 +94,18 @@
       .pitch { grid-template-columns:minmax(0, 1fr); gap:20px; }
       .screen { font-size:11.5px; padding:16px 14px 20px; }
       .screen .c { display:none; }   /* commands fit; comments are desktop-only */
-      .eyebrow .req { display:none; }
+      .eyebrow .req, .eyebrow .time { display:none; }
+      /* request path as a vertical rail: one hop per row, no wrapped arrows */
+      .flow { flex-direction:column; align-items:flex-start; gap:0; position:relative; padding-left:4px; }
+      .flow::before { content:""; position:absolute; left:8px; top:14px; bottom:14px; width:1px;
+                      background:linear-gradient(var(--line), var(--accent-line) 25%, var(--line)); }
+      .flow i { display:none; }
+      .flow span { position:relative; border:0; background:none; padding:7px 0 7px 22px; border-radius:0; }
+      .flow span::before { content:""; position:absolute; left:1px; top:50%; width:7px; height:7px; margin-top:-4.5px;
+                           border-radius:50%; background:var(--bg); border:1px solid var(--faint); }
+      .flow span.gold { background:none; }
+      .flow span.gold::before { background:var(--accent); border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
+      .flow span.end::before { background:var(--white); border-color:var(--white); }
     }
   </style>
 </head>
@@ -98,7 +114,7 @@
   <h1><a href="https://github.com/smarchone/cf-tunnel">~/ <span>smarchone/cf-tunnel</span></a></h1>
 
   <div class="top">
-    <p class="hero">Demo localhost<br><em>from one link that never changes.</em></p>
+    <p class="hero">One permanent link.<span class="sub">Exposes your local services when you're on,<br><em>shows AFK when you're not.</em></span></p>
     <a class="repo" href="https://github.com/smarchone/cf-tunnel" aria-label="cf-tunnel on GitHub" title="cf-tunnel on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
   </div>
   <p class="tldr"><span>tl;dr</span>Send friends <code>demo.you.workers.dev</code> once. While your laptop runs <code>online.sh</code>, they log in and see your localhost. When you stop it, they see AFK.</p>
@@ -113,16 +129,16 @@
   </div>
 
   <section class="pitch">
-    <div><span class="lbl">Permanent link</span><h2>The URL never changes.</h2><p>A Cloudflare Worker follows each new tunnel. No domain, no card.</p></div>
-    <div><span class="lbl">Friends only</span><h2>A password per person.</h2><p>Login is checked at the Worker. The raw tunnel URL is useless.</p></div>
-    <div><span class="lbl">Online = running</span><h2>Ctrl-C and you're AFK.</h2><p>One script starts and stops it all. Friends see AFK, not errors.</p></div>
+    <div><span class="lbl">Permanent link</span><h2>The URL never changes.</h2><p>A Worker follows each new tunnel. No domain, no card.</p></div>
+    <div><span class="lbl">Friends only</span><h2>A password per person.</h2><p>Basic auth. <span class="warn">For demos, not anything sensitive.</span></p></div>
+    <div><span class="lbl">Online = running</span><h2>Ctrl-C and you're AFK.</h2><p>One script runs it all. Friends see AFK, not errors.</p></div>
   </section>
 
   <div class="flow">
-    <span>friend</span>→<span class="gold">demo.you.workers.dev</span>→<span>login</span>→<span>tunnel</span>→<span>nginx</span>→<span class="end">localhost:3000</span>
+    <span>friend</span><i>→</i><span class="gold">demo.you.workers.dev</span><i>→</i><span>login</span><i>→</i><span>tunnel</span><i>→</i><span>nginx</span><i>→</i><span class="end">localhost:3000</span>
   </div>
 
-  <p class="eyebrow">Get started · <b>~1 min</b> <span class="req">· needs Docker Desktop, Node, a free Cloudflare account</span><button id="copy">copy</button></p>
+  <p class="eyebrow">Get started <span class="time">· <b>~1 min</b></span> <span class="req">· needs Docker Desktop, Node, a free Cloudflare account</span><button id="copy">copy</button></p>
   <div class="win">
 <pre class="screen" id="steps"><span class="p">$ </span>git clone https://github.com/smarchone/cf-tunnel
 <span class="p">$ </span>cd cf-tunnel
