@@ -36,10 +36,10 @@
     h1 a { color:inherit; text-decoration:none; }
     h1 a:hover span { text-decoration:underline; text-underline-offset:3px; }
     .top { display:flex; align-items:flex-start; gap:40px; }
-    .top .hero { flex:0 1 auto; min-width:0; }   /* icon sits just past the slogan, not at the far edge */
+    .top .hero { flex:1 1 auto; min-width:0; }   /* icon sits at the right edge of the content column */
     .repo { flex:none; margin-top:6px; color:var(--dim); transition:color .15s; }
     .repo:hover { color:var(--white); }
-    .repo svg { display:block; width:30px; height:30px; fill:currentColor; }
+    .repo svg { display:block; width:38px; height:38px; fill:currentColor; }
     .hero { margin:0 0 14px; font:700 clamp(28px, 5vw, 40px)/1.05 var(--sans); color:var(--white); letter-spacing:-.035em; }
     .hero .sub { display:block; margin-top:8px; font:600 clamp(17px, 2.6vw, 20px)/1.3 var(--sans); color:var(--fg); letter-spacing:-.015em; }
     .hero em { font-style:normal; color:var(--accent);
