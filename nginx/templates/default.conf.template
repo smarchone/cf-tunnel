@@ -1,0 +1,18 @@
+server {
+    listen 8080;
+    server_tokens off;
+
+    # Marker: proves a response came from this laptop. Sent on every response, errors included.
+    # (A location with its own add_header stops inheriting this — repeat it there.)
+    add_header X-Origin laptop always;
+
+    # Only the Worker knows ORIGIN_KEY; direct hits on the trycloudflare.com URL get 403.
+    if ($http_x_origin_key != "${ORIGIN_KEY}") {
+        return 403;
+    }
+
+    location / {
+        default_type text/plain;
+        return 200 "hello world\n";
+    }
+}
