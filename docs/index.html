@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>cf-tunnel</title>
+  <meta name="description" content="Demo your local services via Cloudflare tunnels. One permanent link, friends-only login, free." />
+  <!-- Google Analytics (same property as smarchone.github.io/skills) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZZCV0RCPVZ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-ZZCV0RCPVZ');
+  </script>
+  <style>
+    :root {
+      --bg:#0c0d10; --win:#131419; --bar:#1a1c22; --line:#23262e; --code:#1a1c22; --card:#131419;
+      --fg:#c4c7cf; --dim:#7d828e; --faint:#565b66; --white:#e8e9ed; --accent:#aab4ff; --accent-soft:rgba(170,180,255,.10); --accent-line:rgba(170,180,255,.35);
+      --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      --sans:ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+      color-scheme:dark;
+    }
+    * { box-sizing:border-box; }
+    html, body { background:var(--bg); color:var(--fg); margin:0; }
+    body { font:15px/1.65 var(--sans); padding:56px 16px 48px; -webkit-font-smoothing:antialiased;
+           background:radial-gradient(900px 420px at 50% -120px, var(--accent-soft), transparent 70%) no-repeat, var(--bg); }
+    main { max-width:860px; margin:0 auto; }
+    a { color:var(--accent); }
+
+    h1 { font:600 13px/1 var(--mono); color:var(--dim); margin:0 0 22px; letter-spacing:-.01em; }
+    h1 span { color:var(--accent); }
+    .hero { margin:0 0 14px; font:700 clamp(34px, 7vw, 56px)/1.05 var(--sans); color:var(--white); letter-spacing:-.035em; }
+    .hero em { font-style:normal; color:var(--accent);
+               background:linear-gradient(100deg, #cfd6ff, #aab4ff 55%, #7e8ce0); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .tldr { color:var(--fg); margin:0 0 26px; max-width:640px; }
+    .tldr span { font:11px/1 var(--mono); color:var(--accent); text-transform:uppercase; letter-spacing:.1em; margin-right:8px; }
+    code { font:13px var(--mono); color:var(--accent); background:var(--accent-soft); padding:2px 6px; border-radius:5px; }
+
+    .lbl { font:11px/1 var(--mono); color:var(--accent); text-transform:uppercase; letter-spacing:.1em; }
+    .problem { margin:8px 0 24px; padding:16px 20px; border-left:2px solid var(--accent); background:linear-gradient(90deg, var(--accent-soft), transparent 80%); border-radius:0 12px 12px 0; }
+    .problem ul { list-style:none; padding:0; margin:12px 0 0; }
+    .problem li { margin:6px 0; padding-left:20px; position:relative; }
+    .problem li::before { content:"×"; position:absolute; left:0; color:var(--faint); }
+
+    .pitch { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin:12px 0 18px; }
+    .pitch div { min-width:0; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 18px 20px; transition:border-color .2s; }
+    .pitch div:hover { border-color:#323642; }
+    .pitch h2 { font:600 16px/1.35 var(--sans); color:var(--white); margin:10px 0 6px; }
+    .pitch p { color:var(--dim); font-size:14px; line-height:1.6; margin:0; }
+
+    .flow { display:flex; flex-wrap:wrap; align-items:center; gap:8px 6px; margin:0 0 52px; font:13px/1 var(--mono); color:var(--faint); }
+    .flow span { color:var(--dim); border:1px solid var(--line); border-radius:999px; padding:8px 12px; }
+    .flow span.gold { color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft); }
+    .flow span.end { color:var(--white); }
+
+    .eyebrow { font:600 12px/1 var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.12em; margin:0 0 14px; }
+    .eyebrow b { color:var(--accent); font-weight:600; }
+
+    .win { background:var(--win); border:1px solid var(--line); border-radius:14px; overflow:hidden;
+           box-shadow:0 30px 80px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.02) inset; }
+    .bar { display:flex; align-items:center; gap:12px; height:40px; padding:0 14px; background:var(--bar); border-bottom:1px solid var(--line); }
+    .dots { display:flex; gap:7px; }
+    .dots i { width:11px; height:11px; border-radius:50%; background:var(--line); }
+    .title { flex:1; text-align:center; font:12px var(--mono); color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .bar button { font:12px var(--mono); color:var(--dim); background:none; border:0; padding:5px 8px; border-radius:6px; cursor:pointer; }
+    .bar button:hover { color:var(--fg); background:var(--line); }
+    .screen { margin:0; padding:18px 20px 22px; font:12.5px/1.75 var(--mono); color:var(--white); overflow-x:auto; white-space:pre; }
+    .screen, .after pre { scrollbar-width:thin; scrollbar-color:var(--line) transparent; }
+    .screen .c { color:var(--faint); }
+    .screen .p { color:var(--dim); user-select:none; }
+    .screen .o { color:var(--accent); }
+
+    .after { display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:14px; margin:14px 0 0; }
+    .after > div { min-width:0; border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
+    .after h3 { font:600 14px/1.35 var(--sans); color:var(--white); margin:10px 0 8px; }
+    .after pre { margin:0; background:var(--code); border-radius:8px; padding:10px 12px; font:12px/1.6 var(--mono); color:var(--fg); overflow-x:auto; }
+    .after pre .c { color:var(--faint); }
+    .after p { color:var(--dim); font-size:13.5px; margin:8px 0 0; }
+    .after ul { list-style:none; padding:0; margin:0; font:12.5px/1.9 var(--mono); color:var(--dim); }
+    .after li b { color:var(--white); font-weight:500; }
+
+    .hint { color:var(--faint); font:12px var(--mono); margin-top:36px; text-align:center; }
+    .hint a { color:var(--dim); text-decoration:none; }
+    .hint a:hover { color:var(--accent); }
+
+    @media (max-width:600px) {
+      body { padding-top:28px; }
+      .pitch, .after { grid-template-columns:minmax(0, 1fr); }
+      .screen { font-size:11.5px; padding:16px 14px 20px; }
+      .screen .c { display:none; }   /* commands fit; comments are desktop-only */
+      .title { display:none; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>~/ <span>smarchone/cf-tunnel</span></h1>
+
+  <p class="hero">Demo your local services.<br><em>One link. Free.</em></p>
+  <p class="tldr"><span>tl;dr</span>Send friends <code>demo.you.workers.dev</code> once. While your laptop runs <code>online.sh</code>, they log in and see your localhost. When you stop it, they see AFK.</p>
+
+  <div class="problem">
+    <span class="lbl">The problem</span>
+    <ul>
+      <li>Your app works on <code>localhost</code>. Nobody else can see it.</li>
+      <li>Quick tunnels hand out a new random URL every start. You resend it every time.</li>
+      <li>Anyone with that URL gets in. Close the lid and it just errors.</li>
+    </ul>
+  </div>
+
+  <span class="lbl">The fix</span>
+  <section class="pitch">
+    <div><span class="lbl">Permanent link</span><h2>The URL never changes.</h2><p>A Cloudflare Worker is the front door and follows each new tunnel for you. No domain, no card.</p></div>
+    <div><span class="lbl">Friends only</span><h2>A password per person.</h2><p>Login happens at the Worker. The raw tunnel URL is useless without a secret only the Worker has.</p></div>
+    <div><span class="lbl">Online = running</span><h2>Ctrl-C and you're AFK.</h2><p>One script starts everything and tears it down. Visitors get a clean AFK page, not an error.</p></div>
+  </section>
+
+  <div class="flow">
+    <span>friend</span>→<span class="gold">demo.you.workers.dev</span>→<span>login</span>→<span>tunnel</span>→<span>nginx</span>→<span class="end">localhost:3000</span>
+  </div>
+
+  <p class="eyebrow">Get started · <b>~1 min</b></p>
+  <div class="win">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="title">needs Docker Desktop, Node and a free Cloudflare account</div><button id="copy">copy</button></div>
+<pre class="screen" id="steps"><span class="p">$ </span>git clone https://github.com/smarchone/cf-tunnel &amp;&amp; cd cf-tunnel
+<span class="p">$ </span>./scripts/init-env.sh          <span class="c"># secret for the Worker ↔ laptop handshake</span>
+<span class="p">$ </span>./scripts/add-user.sh alice    <span class="c"># one per friend, password ≥ 12 chars</span>
+<span class="p">$ </span>npx wrangler login             <span class="c"># free Cloudflare account</span>
+<span class="p">$ </span>./scripts/deploy-worker.sh     <span class="c"># prints your permanent link</span>
+<span class="o">  → https://demo.you.workers.dev</span>
+<span class="p">$ </span>./scripts/online.sh            <span class="c"># online while it runs · Ctrl-C = AFK</span></pre>
+  </div>
+
+  <section class="after">
+    <div>
+      <span class="lbl">Expose a service</span>
+      <h3>One file per service.</h3>
+<pre><span class="c"># nginx/templates/services/app.conf.template</span>
+location /app/ {
+  proxy_pass http://host.docker.internal:3000/;
+}</pre>
+      <p>Then restart <code>online.sh</code>. Paths you don't list return 404.</p>
+    </div>
+    <div>
+      <span class="lbl">What visitors see</span>
+      <h3>Always a clear answer.</h3>
+      <ul>
+        <li><b>laptop offline</b> → AFK</li>
+        <li><b>wrong password</b> → 401</li>
+        <li><b>right password</b> → your app</li>
+        <li><b>raw tunnel URL</b> → 403</li>
+      </ul>
+    </div>
+  </section>
+
+  <p class="hint"><a href="https://github.com/smarchone/cf-tunnel">GitHub ↗</a> · <a href="https://smarchone.github.io/skills/">more from smarchone ↗</a></p>
+</main>
+<script>
+  const btn = document.getElementById('copy');
+  btn.addEventListener('click', async () => {
+    const cmds = [...document.getElementById('steps').innerText.split('\n')]
+      .filter(l => l.startsWith('$ ')).map(l => l.slice(2).replace(/\s+#.*$/, '')).join('\n');
+    if (window.gtag) gtag('event', 'copy_get_started');
+    try { await navigator.clipboard.writeText(cmds); btn.textContent = 'copied'; }
+    catch { btn.textContent = 'select & copy'; }
+    setTimeout(() => (btn.textContent = 'copy'), 1500);
+  });
+</script>
+</body>
+</html>
