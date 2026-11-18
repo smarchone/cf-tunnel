@@ -102,34 +102,42 @@ nginx runs in docker, but it can proxy to apps running directly on the Mac throu
 Worker ─► tunnel ─► cloudflared ─► nginx (docker) ─► host.docker.internal:3000 ─► app on the Mac
 ```
 
-**The nginx config is the allowlist.** Visitors can only reach ports written into a `proxy_pass` line:
+**The nginx config is the allowlist.** Visitors can only reach ports written into a `proxy_pass` line. Each service gets its own file in `nginx/templates/services/<name>.conf.template`, holding only `location` blocks:
+
+```nginx
+# services/notes.conf.template
+location /notes/ { proxy_pass http://host.docker.internal:3000/; }
+```
+
+`default.conf.template` holds what every service shares and pulls the service files into its one `server` block:
 
 ```nginx
 server {
-    # ...listen, marker and ORIGIN_KEY check stay as they are...
+    # ...listen, X-Origin marker and ORIGIN_KEY check...
+    absolute_redirect off;                # relative Location headers (see below)
 
-    location /notes/ { proxy_pass http://host.docker.internal:3000/; include /etc/nginx/proxy.conf; }
-    location /api/   { proxy_pass http://host.docker.internal:8000/; include /etc/nginx/proxy.conf; }
+    proxy_set_header Host localhost;      # dev servers reject unknown Host headers
+    proxy_set_header X-Origin-Key "";     # don't pass the secret to the app
+    proxy_http_version 1.1;
 
-    location / { return 404; }   # deny everything not listed
+    include /etc/nginx/conf.d/services/*.conf;
+
+    location / { return 404; }            # deny everything not listed
 }
 ```
 
-`proxy.conf`, shared by each location:
-
-```nginx
-proxy_set_header Host localhost;          # dev servers (e.g. Vite) reject unknown Host headers
-proxy_set_header X-Origin-Key "";         # don't pass the secret to the app
-proxy_http_version 1.1;
-proxy_set_header Upgrade $http_upgrade;   # websockets / hot reload
-proxy_set_header Connection "upgrade";
-```
+- **Loading:** the nginx image renders `templates/**/*.template` into `conf.d/` at container start, keeping subfolders. `services/` lands in `conf.d/services/`, outside the `conf.d/*.conf` glob that `nginx.conf` loads at the `http` level, so service files load only inside the `server` block, after the key check. No image rebuild: edit, then restart `online.sh`.
+- **Git:** only `services/hello.conf.template` (`hello world` at `/`) is tracked. Other service files are local to the Mac and ignored.
+- **Shared settings sit at server level** so every location inherits them. A location that sets any `proxy_set_header` of its own loses all of them and must repeat them.
+- **Websockets:** add `proxy_set_header Upgrade $http_upgrade;` and `proxy_set_header Connection "upgrade";` in that service's location (and repeat the shared headers, per the rule above).
+- **Server-sent events / long polls:** `proxy_buffering off;` and a long `proxy_read_timeout` in that location.
 
 **Rules**
 - Hard-code every port. Never build `proxy_pass` from request data such as `$arg_port`, or a visitor can pick any port on the Mac.
-- End with `location / { return 404; }` so unlisted paths reach nothing.
+- Keep `location / { return 404; }` last in `default.conf` so unlisted paths reach nothing. Two services can't claim the same path.
 - Don't add `add_header` inside a location, or it stops inheriting the `X-Origin` marker.
-- Expose services, not folders. Avoid file browsers, database admin UIs or anything that runs commands.
+- Keep `absolute_redirect off`. Without it, nginx's own redirects (`/app` → `/app/`) carry nginx's host, which through the tunnel is the raw `trycloudflare.com` URL: it skips the Worker and the visitor gets 403.
+- Expose services, not folders. Avoid file browsers, database admin UIs or anything that runs commands. Read the app's routes before exposing it, and `return 403` on admin ones (registering folders, shutdown, agent job queues) with exact-match locations.
 
 **Trade-offs compared with apps in containers**
 
@@ -141,7 +149,10 @@ proxy_set_header Connection "upgrade";
 
 **Limit:** the allowlist controls what *visitors* reach, not what the *nginx container* can reach. On Docker Desktop for Mac, any container can connect to any port the Mac listens on, `127.0.0.1` included, and there's no simple per-port firewall between containers and the Mac. The risk is small, since nginx is unprivileged, read-only and runs no app code. For a hard limit, keep sensitive services off `localhost` while the stack runs, or move exposed apps into containers and reach them by service name.
 
-**Path routing:** many single-page apps break under a sub-path, because they request `/assets/...` from the root. Set the app's base path (Vite `base`, Next `basePath`) or serve one app at `/`.
+**Path routing:** many apps break under a sub-path, because they request `/assets/...` from the root. In order of preference:
+1. Set the app's base path (Vite `base`, Next `basePath`).
+2. If the app's absolute paths sit under a prefix no other service uses (e.g. `/api/`), proxy that prefix too.
+3. For server-rendered HTML you don't want to touch, rewrite links in nginx: `proxy_set_header Accept-Encoding "";` plus `sub_filter 'href="/' 'href="/app/';` (and `src=`, `poster=`) with `sub_filter_once off;`, and `proxy_redirect / /app/;` for the app's own redirects. Only HTML is rewritten (`sub_filter_types` defaults to `text/html`); links built in JavaScript are not.
 
 ## Upgrade path
 

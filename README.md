@@ -16,7 +16,8 @@ See `research.md` for the design and decisions.
 ```sh
 ./scripts/init-env.sh            # generates ORIGIN_KEY into .env
 ./scripts/add-user.sh alice      # once per person (password ≥ 12 chars)
-npx wrangler login               # free Cloudflare account, no card (online.sh reuses this login)
+npx wrangler login               # free Cloudflare account, no card 
+                                 #    (online.sh reuses this login)
 ./scripts/deploy-worker.sh       # deploys Worker + KV + secrets, saves WORKER_URL
 ```
 
@@ -26,10 +27,12 @@ Share `https://demo.<you>.workers.dev` with your friends.
 
 ```sh
 ./scripts/online.sh      # starts the stack, registers the URL; online while it runs
-                         # Ctrl-C (or closing the terminal) → clears KV, stops the stack = AFK
+                         # Ctrl-C (or close the terminal) → clears KV, stops the stack (AFK)
 ```
 
 Add or remove people: `./scripts/add-user.sh bob` or `./scripts/remove-user.sh bob`, then `./scripts/deploy-worker.sh`.
+
+Expose a local service: add `nginx/templates/services/<name>.conf.template` with its `location` blocks (proxy to `host.docker.internal:<port>`), then restart `online.sh`.
 
 ## Check
 

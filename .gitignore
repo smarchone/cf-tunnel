@@ -4,3 +4,7 @@
 .wrangler/
 node_modules/
 TODO
+
+# Local service configs stay on this machine; only the hello world default is tracked.
+nginx/templates/services/*
+!nginx/templates/services/hello.conf.template

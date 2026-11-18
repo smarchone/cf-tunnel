@@ -1,0 +1,5 @@
+# hello world at / — the "laptop is online" page.
+location = / {
+    default_type text/plain;
+    return 200 "hello world\n";
+}

@@ -1,6 +1,7 @@
 server {
     listen 8080;
     server_tokens off;
+    absolute_redirect off;   # relative Location headers, so redirects never point at the raw tunnel host
 
     # Marker: proves a response came from this laptop. Sent on every response, errors included.
     # (A location with its own add_header stops inheriting this — repeat it there.)
@@ -11,8 +12,14 @@ server {
         return 403;
     }
 
-    location / {
-        default_type text/plain;
-        return 200 "hello world\n";
-    }
+    # Shared by every proxied location (server-level, so service locations inherit it).
+    proxy_set_header Host localhost;      # local dev servers often reject non-localhost Host headers
+    proxy_set_header X-Origin-Key "";     # don't pass the secret to the app
+    proxy_http_version 1.1;
+
+    # One file per service: templates/services/<name>.conf.template.
+    # Rendered into conf.d/services/, outside the http-level conf.d/*.conf glob, so they only load here.
+    include /etc/nginx/conf.d/services/*.conf;
+
+    location / { return 404; }   # deny everything not listed
 }
