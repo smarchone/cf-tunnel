@@ -17,8 +17,13 @@ log() { echo "$(date +%T) $*"; }
 kv()  { (cd "$ROOT/worker" && "${WRANGLER[@]}" kv key "$@" --binding TUNNEL --remote >/dev/null 2>&1); }
 
 teardown() {
-  trap - INT TERM HUP
-  if kv delete tunnel_url; then log "✓ cleared tunnel URL — AFK for everyone"
+  trap '' INT TERM HUP
+  log "going AFK — clearing tunnel URL (~5s, extra Ctrl-C is ignored)…"
+  # Run the delete in its own process group (set -m): the terminal sends Ctrl-C to the whole
+  # foreground group, and node/wrangler doesn't honour an inherited ignore, so a second Ctrl-C
+  # used to kill the delete mid-flight.
+  set -m; kv delete tunnel_url & local pid=$!; set +m
+  if wait "$pid"; then log "✓ cleared tunnel URL — AFK for everyone"
   else log "! couldn't clear tunnel URL — friends will still see AFK after login" >&2; fi
   docker compose down
   exit 0

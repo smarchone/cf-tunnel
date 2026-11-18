@@ -6,7 +6,7 @@ A link only approved people can open. Laptop on → **hello world**. Laptop off 
 
 ```
                  ┌────────────── CLOUDFLARE (always on, free) ──────────────┐
-Visitor ────────►│ Worker  afk-guard.<you>.workers.dev   ← permanent link   │
+Visitor ────────►│ Worker  demo.<you>.workers.dev   ← permanent link        │
                  │   1. tunnel_url in KV?               none ─► AFK (public)│
                  │   2. login (Basic Auth)              ✗ ─► 401            │
                  │   3. forward + X-Origin-Key ─► abc.trycloudflare.com     │
@@ -91,6 +91,7 @@ Visitor ────────►│ Worker  afk-guard.<you>.workers.dev   ←
 
 - If the laptop sleeps, logged-in visitors see AFK. Strangers still see the login prompt, because the stale URL is still in KV. Stop `online.sh` before leaving so everyone sees AFK. Keep the laptop awake while plugged in.
 - After a restart, a new URL can take up to about 60s to reach every Cloudflare location, so a visitor may briefly see AFK.
+- Going AFK has the same lag: after `online.sh` deletes the key, the Worker can keep reading the cached URL for up to ~60s (strangers see the login prompt, logged-in visitors already get AFK because the tunnel is gone).
 - Path-based routing (`/app1`) breaks most single-page apps' asset paths. Use separate tunnels or hostnames when you add services.
 
 ## Routing nginx to local (non-docker) servers

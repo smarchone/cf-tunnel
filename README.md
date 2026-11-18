@@ -20,7 +20,7 @@ npx wrangler login               # free Cloudflare account, no card (online.sh r
 ./scripts/deploy-worker.sh       # deploys Worker + KV + secrets, saves WORKER_URL
 ```
 
-Share `https://afk-guard.<you>.workers.dev` with your friends.
+Share `https://demo.<you>.workers.dev` with your friends.
 
 ## Daily use
 

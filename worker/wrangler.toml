@@ -1,7 +1,7 @@
-name = "afk-guard"
+name = "demo"
 main = "worker.js"
 compatibility_date = "2025-11-01"
-workers_dev = true   # the permanent link: https://afk-guard.<you>.workers.dev
+workers_dev = true   # the permanent link: https://demo.<you>.workers.dev
 
 # Holds one key: tunnel_url, written by scripts/online.sh. Wrangler creates the namespace on first deploy.
 [[kv_namespaces]]
