@@ -90,6 +90,55 @@ Visitor ────────►│ Worker  afk-guard.<you>.workers.dev   ←
 - Path-based routing (`/app1`) breaks most single-page apps' asset paths. Use separate tunnels or hostnames when you add services.
 - With `restart: unless-stopped`, the stack comes back online whenever Docker Desktop starts.
 
+## Routing nginx to local (non-docker) servers
+
+nginx runs in docker, but it can proxy to apps running directly on the Mac through `host.docker.internal`. This was tested: a server bound to `127.0.0.1` on the Mac is reachable from a container, so apps can stay on `localhost`.
+
+```
+Worker ─► tunnel ─► cloudflared ─► nginx (docker) ─► host.docker.internal:3000 ─► app on the Mac
+```
+
+**The nginx config is the allowlist.** Visitors can only reach ports written into a `proxy_pass` line:
+
+```nginx
+server {
+    # ...listen, marker and ORIGIN_KEY check stay as they are...
+
+    location /notes/ { proxy_pass http://host.docker.internal:3000/; include /etc/nginx/proxy.conf; }
+    location /api/   { proxy_pass http://host.docker.internal:8000/; include /etc/nginx/proxy.conf; }
+
+    location / { return 404; }   # deny everything not listed
+}
+```
+
+`proxy.conf`, shared by each location:
+
+```nginx
+proxy_set_header Host localhost;          # dev servers (e.g. Vite) reject unknown Host headers
+proxy_set_header X-Origin-Key "";         # don't pass the secret to the app
+proxy_http_version 1.1;
+proxy_set_header Upgrade $http_upgrade;   # websockets / hot reload
+proxy_set_header Connection "upgrade";
+```
+
+**Rules**
+- Hard-code every port. Never build `proxy_pass` from request data such as `$arg_port`, or a visitor can pick any port on the Mac.
+- End with `location / { return 404; }` so unlisted paths reach nothing.
+- Don't add `add_header` inside a location, or it stops inheriting the `X-Origin` marker.
+- Expose services, not folders. Avoid file browsers, database admin UIs or anything that runs commands.
+
+**Trade-offs compared with apps in containers**
+
+| | App in a container | App on the Mac |
+|---|---|---|
+| If the app is compromised | The attacker is stuck in the container | The attacker gets your user account: files, SSH keys, browser data |
+| App not running | 502 (has the marker, so it doesn't show as AFK) | Same |
+| Dev workflow and hot reload | Clunkier | Native |
+
+**Limit:** the allowlist controls what *visitors* reach, not what the *nginx container* can reach. On Docker Desktop for Mac, any container can connect to any port the Mac listens on, `127.0.0.1` included, and there's no simple per-port firewall between containers and the Mac. The risk is small, since nginx is unprivileged, read-only and runs no app code. For a hard limit, keep sensitive services off `localhost` while the stack runs, or move exposed apps into containers and reach them by service name.
+
+**Path routing:** many single-page apps break under a sub-path, because they request `/assets/...` from the root. Set the app's base path (Vite `base`, Next `basePath`) or serve one app at `/`.
+
 ## Upgrade path
 
 Buying a domain (~₹150/yr) gets you a named tunnel and a Worker route on `hi.yourdomain.com`. That drops KV, the registrar, the origin key and the quick-tunnel limits.
