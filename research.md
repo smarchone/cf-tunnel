@@ -33,10 +33,10 @@ Visitor ────────►│ Worker  demo.<you>.workers.dev   ← perm
 | 1 | **Worker** (`*.workers.dev`) | The permanent link. If KV has no tunnel URL, it serves the AFK page to everyone. Otherwise it checks logins, forwards requests, and serves AFK when a response lacks the marker. |
 | 2 | **KV** | Holds one value: `tunnel_url`. The Worker reads it; `online.sh` writes it. |
 | 3 | **Quick tunnel** | `cloudflared --url http://nginx:8080` (no account). Gets a new `*.trycloudflare.com` URL each time it starts. |
-| 4 | **`scripts/online.sh`** (on the Mac) | The one daemon. Startup: `docker compose up -d`. Every 30s: reads `127.0.0.1:2000/quicktunnel` and, when the URL changes, writes it with `wrangler kv key put --binding TUNNEL --remote`. Teardown (Ctrl-C / SIGTERM / SIGHUP): deletes the key, `docker compose down`. |
+| 4 | **`scripts/online.sh`** (on the Mac) | The one daemon. Startup: `docker compose up -d`. Every 30s: reads `127.0.0.1:2000/quicktunnel` and, when the URL changes, writes it with `wrangler kv key put --binding TUNNEL --remote`. Teardown (Ctrl-C / SIGTERM / SIGHUP): deletes the key, `docker compose down`. `scripts/cf-tunnel` runs it in the background. |
 | 5 | **nginx** (docker) | Rejects requests without the right `X-Origin-Key` (403). Stamps every response with `X-Origin: laptop`, then returns "hello world". |
 
-**Online:** `./scripts/online.sh`. **AFK:** stop it (Ctrl-C, close the terminal, or `pkill -f scripts/online.sh`).
+**Online:** `cf-tunnel start` (background) or `./scripts/online.sh` (foreground). **AFK:** `cf-tunnel stop`, or Ctrl-C / close the terminal in the foreground case.
 
 ## Findings
 
@@ -62,6 +62,8 @@ Visitor ────────►│ Worker  demo.<you>.workers.dev   ← perm
 - **One daemon, `online.sh`, owns the whole lifecycle** (2026-11-18): startup, URL updates, teardown. Online = the process is running; there is no separate registrar or down script, so "containers up but nothing registering" can't happen. Containers use `restart: on-failure`, so a crashed cloudflared comes back (the daemon picks up its new URL) but Docker starting doesn't bring the stack online without the daemon. cloudflared's metrics are on `127.0.0.1:2000` only.
   - *Check interval is 30s, not 5 min:* the check is a local HTTP call (free) and KV is written only on change, so a shorter interval just shrinks the AFK gap after a cloudflared restart.
   - *Ruled out:* the registrar as a compose container (auto-restarts with the stack, but less direct control); a separate `registrar.sh` + `down.sh` pair (two things to keep in sync).
+- **`cf-tunnel start | stop | status` runs `online.sh` as a background daemon** (2026-11-18). A thin wrapper, not a second lifecycle: `start` launches `online.sh` with `nohup` in its own process group (so Ctrl-C or closing the terminal doesn't take you AFK) and waits for the first registered URL; `stop` sends SIGTERM, so the existing teardown runs; `status` reads the PID and the URL from `.run/online.log`. `cf-tunnel install` symlinks it into `~/.local/bin`.
+  - *Not done:* a launchd agent (start at login, restart on crash). It would have to wait for Docker Desktop, and auto-online at login is a surprise for a status that's public.
 
 ## Secrets
 
@@ -89,7 +91,7 @@ Visitor ────────►│ Worker  demo.<you>.workers.dev   ← perm
 
 ## Gotchas
 
-- If the laptop sleeps, logged-in visitors see AFK. Strangers still see the login prompt, because the stale URL is still in KV. Stop `online.sh` before leaving so everyone sees AFK. Keep the laptop awake while plugged in.
+- If the laptop sleeps, logged-in visitors see AFK. Strangers still see the login prompt, because the stale URL is still in KV. Run `cf-tunnel stop` before leaving so everyone sees AFK. Keep the laptop awake while plugged in.
 - After a restart, a new URL can take up to about 60s to reach every Cloudflare location, so a visitor may briefly see AFK.
 - Going AFK has the same lag: after `online.sh` deletes the key, the Worker can keep reading the cached URL for up to ~60s (strangers see the login prompt, logged-in visitors already get AFK because the tunnel is gone).
 - Path-based routing (`/app1`) breaks most single-page apps' asset paths. Use separate tunnels or hostnames when you add services.
@@ -126,7 +128,7 @@ server {
 }
 ```
 
-- **Loading:** the nginx image renders `templates/**/*.template` into `conf.d/` at container start, keeping subfolders. `services/` lands in `conf.d/services/`, outside the `conf.d/*.conf` glob that `nginx.conf` loads at the `http` level, so service files load only inside the `server` block, after the key check. No image rebuild: edit, then restart `online.sh`.
+- **Loading:** the nginx image renders `templates/**/*.template` into `conf.d/` at container start, keeping subfolders. `services/` lands in `conf.d/services/`, outside the `conf.d/*.conf` glob that `nginx.conf` loads at the `http` level, so service files load only inside the `server` block, after the key check. No image rebuild: edit, then `cf-tunnel restart`.
 - **Git:** only `services/hello.conf.template` (`hello world` at `/`) is tracked. Other service files are local to the Mac and ignored.
 - **Shared settings sit at server level** so every location inherits them. A location that sets any `proxy_set_header` of its own loses all of them and must repeat them.
 - **Websockets:** add `proxy_set_header Upgrade $http_upgrade;` and `proxy_set_header Connection "upgrade";` in that service's location (and repeat the shared headers, per the rule above).

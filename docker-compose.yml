@@ -1,4 +1,4 @@
-# Started and stopped by ./scripts/online.sh (Ctrl-C = AFK). Don't run it by hand.
+# Started and stopped by ./scripts/online.sh (via cf-tunnel start/stop). Don't run it by hand.
 services:
   cloudflared:
     image: cloudflare/cloudflared:2026.11.1

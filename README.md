@@ -26,20 +26,26 @@ Share `https://demo.<you>.workers.dev` with your friends.
 ## Daily use
 
 ```sh
-./scripts/online.sh      # starts the stack, registers the URL; online while it runs
-                         # Ctrl-C (or close the terminal) → clears KV, stops the stack (AFK)
+./scripts/cf-tunnel install   # once: symlinks cf-tunnel into ~/.local/bin (or $BIN_DIR)
+
+cf-tunnel start      # online in the background; prints the tunnel + share URLs
+cf-tunnel status     # online/AFK, current URL, containers
+cf-tunnel stop       # clears KV, stops the stack (AFK)
+cf-tunnel logs       # follow .run/online.log
 ```
+
+Prefer a foreground session? `./scripts/online.sh` does the same and goes AFK on Ctrl-C or when the terminal closes.
 
 Add or remove people: `./scripts/add-user.sh bob` or `./scripts/remove-user.sh bob`, then `./scripts/deploy-worker.sh`.
 
-Expose a local service: add `nginx/templates/services/<name>.conf.template` with its `location` blocks (proxy to `host.docker.internal:<port>`), then restart `online.sh`.
+Expose a local service: add `nginx/templates/services/<name>.conf.template` with its `location` blocks (proxy to `host.docker.internal:<port>`), then `cf-tunnel restart`.
 
 ## Check
 
 - Stack down → AFK, no login.
 - Stack up, no or wrong password → 401.
 - Stack up, right password → `hello world`.
-- Lid closed without stopping `online.sh` → strangers see login; friends see AFK.
+- Lid closed without `cf-tunnel stop` → strangers see login; friends see AFK.
 - Raw `*.trycloudflare.com` URL → 403.
 
-`online.sh` prints each URL it registered.
+`cf-tunnel logs` shows each URL it registered.

@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Run scripts/online.sh as a background daemon.
+#   cf-tunnel start     go online in the background (survives closing the terminal)
+#   cf-tunnel stop      go AFK: clear KV, docker compose down
+#   cf-tunnel status    running?, current URL, containers
+#   cf-tunnel logs      follow the daemon log
+#   cf-tunnel install   symlink this script into ~/.local/bin (or $BIN_DIR)
+set -uo pipefail
+
+# Resolve symlinks so an installed copy still finds the repo.
+SELF="$0"
+while [[ -L "$SELF" ]]; do
+  link=$(readlink "$SELF")
+  [[ "$link" = /* ]] && SELF="$link" || SELF="$(dirname "$SELF")/$link"
+done
+ROOT="$(cd "$(dirname "$SELF")/.." && pwd)"
+RUN="$ROOT/.run"
+PIDFILE="$RUN/online.pid"
+LOG="$RUN/online.log"
+
+pid()     { [[ -f "$PIDFILE" ]] && cat "$PIDFILE"; }
+running() { local p; p=$(pid) && [[ -n "$p" ]] && kill -0 "$p" 2>/dev/null; }
+
+start() {
+  if running; then echo "already online (pid $(pid))"; return 0; fi
+  [[ -f "$ROOT/.env" ]] || { echo "Missing .env — run ./scripts/init-env.sh" >&2; return 1; }
+  mkdir -p "$RUN"
+  echo "--- start $(date '+%F %T')" >> "$LOG"
+  local off; off=$(( $(wc -l < "$LOG") ))
+  # Own process group (set -m) and no terminal: Ctrl-C or closing this shell won't touch it.
+  set -m
+  nohup "$ROOT/scripts/online.sh" </dev/null >>"$LOG" 2>&1 &
+  echo $! > "$PIDFILE"
+  set +m
+
+  # Wait for the first registered URL (or an early exit).
+  for _ in $(seq 1 60); do
+    running || { echo "online.sh exited — see $LOG" >&2; tail -n 5 "$LOG" >&2; rm -f "$PIDFILE"; return 1; }
+    if tail -n +"$off" "$LOG" | grep -q 'registered https://'; then
+      echo "online (pid $(pid))"; url; return 0
+    fi
+    sleep 1
+  done
+  echo "started (pid $(pid)), no URL yet — check: cf-tunnel logs"
+}
+
+stop() {
+  if ! running; then
+    rm -f "$PIDFILE"
+    echo "not running"
+    # Clean up containers left by a crash.
+    if [[ -n "$(cd "$ROOT" && docker compose ps -q 2>/dev/null)" ]]; then
+      (cd "$ROOT" && docker compose down)
+    fi
+    return 0
+  fi
+  local p; p=$(pid)
+  echo "going AFK (pid $p)…"
+  kill -TERM "$p"
+  for _ in $(seq 1 60); do
+    kill -0 "$p" 2>/dev/null || { rm -f "$PIDFILE"; grep -E '✓ cleared|! couldn' "$LOG" | tail -n 1; echo "AFK"; return 0; }
+    sleep 1
+  done
+  echo "still running after 60s — kill -9 $p and run: docker compose down" >&2
+  return 1
+}
+
+url() {
+  # Last URL registered by the current (latest) run.
+  local u
+  u=$(awk '/^--- start/{u=""} /registered https:/{u=$NF} END{print u}' "$LOG" 2>/dev/null)
+  [[ -n "$u" ]] && echo "tunnel:  $u"
+  local w; w=$(sed -n 's/^WORKER_URL=//p' "$ROOT/.env" 2>/dev/null)
+  [[ -n "$w" ]] && echo "share:   $w"
+  return 0
+}
+
+status() {
+  if running; then
+    echo "online (pid $(pid), since $(ps -o lstart= -p "$(pid)" | xargs))"
+    url
+  else
+    echo "AFK (not running)"
+  fi
+  (cd "$ROOT" && docker compose ps --format '  {{.Service}}: {{.Status}}' 2>/dev/null)
+}
+
+logs() { [[ -f "$LOG" ]] || { echo "no log yet"; return 0; }; tail -n 20 -f "$LOG"; }
+
+install() {
+  local dir="${BIN_DIR:-$HOME/.local/bin}"
+  mkdir -p "$dir"
+  ln -sf "$ROOT/scripts/cf-tunnel" "$dir/cf-tunnel"
+  echo "✓ $dir/cf-tunnel → $ROOT/scripts/cf-tunnel"
+  case ":$PATH:" in *":$dir:"*) ;; *) echo "  add $dir to your PATH";; esac
+}
+
+case "${1:-}" in
+  start|stop|status|logs|install) "$1" ;;
+  restart) stop && start ;;
+  *) echo "usage: cf-tunnel start | stop | restart | status | logs | install" >&2; exit 2 ;;
+esac

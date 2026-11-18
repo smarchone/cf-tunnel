@@ -70,8 +70,8 @@
     .eyebrow { font:600 12px/1 var(--mono); color:var(--faint); text-transform:uppercase; letter-spacing:.12em; margin:0 0 12px; display:flex; align-items:baseline; gap:.5em; }
     .eyebrow b { color:var(--accent); font-weight:600; }
     .eyebrow .req { color:var(--faint); font-weight:400; text-transform:none; letter-spacing:0; }
-    .eyebrow button { margin-left:auto; font:12px var(--mono); color:var(--dim); background:none; border:0; padding:0; cursor:pointer; text-transform:none; letter-spacing:0; }
-    .eyebrow button:hover { color:var(--accent); }
+    .eyebrow a { color:var(--dim); }
+    .eyebrow a:hover { color:var(--accent); }
 
     .win { background:var(--win); border:1px solid var(--line); border-radius:14px; overflow:hidden;
            box-shadow:0 30px 80px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.02) inset; }
@@ -94,7 +94,7 @@
       .pitch { grid-template-columns:minmax(0, 1fr); gap:20px; }
       .screen { font-size:11.5px; padding:16px 14px 20px; }
       .screen .c { display:none; }   /* commands fit; comments are desktop-only */
-      .eyebrow .req, .eyebrow .time { display:none; }
+      .usage .c { display:inline; }  /* except usage: the comment is the point */
       /* request path as a vertical rail: one hop per row, no wrapped arrows */
       .flow { flex-direction:column; align-items:flex-start; gap:0; position:relative; padding-left:4px; }
       .flow::before { content:""; position:absolute; left:8px; top:14px; bottom:14px; width:1px;
@@ -117,7 +117,7 @@
     <p class="hero">One permanent link.<span class="sub">Exposes your local services when you're on,<br><em>shows AFK when you're not.</em></span></p>
     <a class="repo" href="https://github.com/smarchone/cf-tunnel" aria-label="cf-tunnel on GitHub" title="cf-tunnel on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
   </div>
-  <p class="tldr"><span>tl;dr</span>Send friends <code>demo.you.workers.dev</code> once. While your laptop runs <code>online.sh</code>, they log in and see your localhost. When you stop it, they see AFK.</p>
+  <p class="tldr"><span>tl;dr</span>Send friends <code>demo.you.workers.dev</code> once. After <code>cf-tunnel start</code>, they log in and see your localhost. After <code>cf-tunnel stop</code>, they see AFK.</p>
 
   <div class="problem">
     <span class="lbl">The problem</span>
@@ -131,37 +131,24 @@
   <section class="pitch">
     <div><span class="lbl">Permanent link</span><h2>The URL never changes.</h2><p>A Worker follows each new tunnel. No domain, no card.</p></div>
     <div><span class="lbl">Friends only</span><h2>A password per person.</h2><p>Basic auth. <span class="warn">For demos, not anything sensitive.</span></p></div>
-    <div><span class="lbl">Online = running</span><h2>Ctrl-C and you're AFK.</h2><p>One script runs it all. Friends see AFK, not errors.</p></div>
+    <div><span class="lbl">Online = running</span><h2>One command and you're AFK.</h2><p>A background daemon runs it all. Friends see AFK, not errors.</p></div>
   </section>
 
   <div class="flow">
     <span>friend</span><i>→</i><span class="gold">demo.you.workers.dev</span><i>→</i><span>login</span><i>→</i><span>tunnel</span><i>→</i><span>nginx</span><i>→</i><span class="end">localhost:3000</span>
   </div>
 
-  <p class="eyebrow">Get started <span class="time">· <b>~1 min</b></span> <span class="req">· needs Docker Desktop, Node, a free Cloudflare account</span><button id="copy">copy</button></p>
+  <p class="eyebrow">Usage <span class="req">· one-time setup in the <a href="https://github.com/smarchone/cf-tunnel#one-time-setup">README</a></span></p>
   <div class="win">
-<pre class="screen" id="steps"><span class="p">$ </span>git clone https://github.com/smarchone/cf-tunnel
-<span class="p">$ </span>cd cf-tunnel
-<span class="p">$ </span>./scripts/init-env.sh          <span class="c"># secret for the Worker ↔ laptop handshake</span>
-<span class="p">$ </span>./scripts/add-user.sh alice    <span class="c"># one per friend, password ≥ 12 chars</span>
-<span class="p">$ </span>npx wrangler login             <span class="c"># free Cloudflare account</span>
-<span class="p">$ </span>./scripts/deploy-worker.sh     <span class="c"># prints your permanent link</span>
-<span class="p">$ </span>./scripts/online.sh            <span class="c"># online while it runs · Ctrl-C = AFK</span></pre>
+<pre class="screen usage"><span class="p">$ </span>cf-tunnel start     <span class="c"># online, prints link</span>
+<span class="p">$ </span>cf-tunnel status    <span class="c"># online or AFK + URL</span>
+<span class="p">$ </span>cf-tunnel stop      <span class="c"># AFK for everyone</span>
+<span class="p">$ </span>cf-tunnel restart   <span class="c"># after adding a service</span>
+<span class="p">$ </span>cf-tunnel logs      <span class="c"># follow the daemon log</span></pre>
   </div>
 
 
   <p class="hint">made with <span class="heart" aria-label="love">♥</span> · <a class="gh" href="https://github.com/smarchone/cf-tunnel"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>@smarchone/cf-tunnel</a></p>
 </main>
-<script>
-  const btn = document.getElementById('copy');
-  btn.addEventListener('click', async () => {
-    const cmds = [...document.getElementById('steps').innerText.split('\n')]
-      .filter(l => l.startsWith('$ ')).map(l => l.slice(2).replace(/\s+#.*$/, '')).join('\n');
-    if (window.gtag) gtag('event', 'copy_get_started');
-    try { await navigator.clipboard.writeText(cmds); btn.textContent = 'copied'; }
-    catch { btn.textContent = 'select & copy'; }
-    setTimeout(() => (btn.textContent = 'copy'), 1500);
-  });
-</script>
 </body>
 </html>
