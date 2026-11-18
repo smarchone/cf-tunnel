@@ -5,16 +5,13 @@
 //   tunnel_url ─► login ✓ ─► forward  → no X-Origin marker → AFK
 //                                     → marker             → laptop's response
 //
-// The laptop's registrar keeps tunnel_url current via PUT/DELETE /__tunnel.
+// scripts/online.sh on the laptop keeps tunnel_url current with wrangler.
 
 const KEY = "tunnel_url";
-const TUNNEL_URL = /^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/;
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/__tunnel") return register(request, env);
-
     const tunnel = await env.TUNNEL.get(KEY);
     if (!tunnel) return afk();
 
@@ -54,25 +51,6 @@ export default {
     return out;
   },
 };
-
-// PUT body=https://abc.trycloudflare.com → store; DELETE → clear (AFK for everyone).
-async function register(request, env) {
-  const auth = request.headers.get("authorization") || "";
-  if (!env.REGISTER_KEY || !safeEqual(auth, `Bearer ${env.REGISTER_KEY}`)) {
-    return text(401, "unauthorized");
-  }
-  if (request.method === "PUT") {
-    const value = (await request.text()).trim();
-    if (!TUNNEL_URL.test(value)) return text(400, "expected https://<name>.trycloudflare.com");
-    await env.TUNNEL.put(KEY, value);
-    return text(200, "ok");
-  }
-  if (request.method === "DELETE") {
-    await env.TUNNEL.delete(KEY);
-    return text(200, "ok");
-  }
-  return text(405, "use PUT or DELETE");
-}
 
 // Returns the username, or null. Fails closed if USERS is missing.
 async function authenticate(request, usersSecret) {

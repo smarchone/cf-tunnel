@@ -1,25 +1,13 @@
-# Online: docker compose up -d
-# AFK:    ./scripts/down.sh
+# Started and stopped by ./scripts/online.sh (Ctrl-C = AFK). Don't run it by hand.
 services:
   cloudflared:
     image: cloudflare/cloudflared:2026.11.1
-    # Quick tunnel (no account/domain). Metrics port is reachable only inside this compose network.
+    # Quick tunnel (no account/domain).
     command: tunnel --no-autoupdate --metrics 0.0.0.0:2000 --url http://nginx:8080
+    # Metrics on the Mac's loopback only, for scripts/online.sh to read the URL.
+    ports: ["127.0.0.1:2000:2000"]
     depends_on: [nginx]
-    restart: unless-stopped
-
-  registrar:
-    image: curlimages/curl:8.11.1
-    # Watches cloudflared's quick-tunnel URL; tells the Worker whenever it changes.
-    entrypoint: ["/bin/sh", "/register.sh"]
-    environment:
-      WORKER_URL: ${WORKER_URL:?run scripts/deploy-worker.sh first}
-      REGISTER_KEY: ${REGISTER_KEY:?run scripts/init-env.sh first}
-    volumes:
-      - ./registrar/register.sh:/register.sh:ro
-    depends_on: [cloudflared]
-    read_only: true
-    restart: unless-stopped
+    restart: on-failure   # online.sh owns the lifecycle; don't revive at Docker start
 
   nginx:
     image: nginxinc/nginx-unprivileged:alpine   # non-root, listens on 8080
@@ -31,5 +19,5 @@ services:
     tmpfs:
       - /tmp
       - /etc/nginx/conf.d:uid=101,gid=101
-    restart: unless-stopped
+    restart: on-failure   # online.sh owns the lifecycle; don't revive at Docker start
     # no "ports:" — only cloudflared can reach nginx
